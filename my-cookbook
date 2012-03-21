@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Initialization - DO NOT REMOVE
+. helpers/initialize
+
+##############################################################
+### Customizations start here ################################
+##############################################################
+
+fail_if_not_root  # Comment out if 'root' is not required.
+
+### Install packages
+# package_update
+# package 'git-core'
+# package 'vim screen htop curl wget traceroute'
+# package 'build-essential'
+# package 'libjpeg-progs'
+# package 'libmagickwand-dev imagemagick'
+# package 'libsqlite3-dev'
+
+### Users
+# add_user 'deploy' ; recipe 'setup_keys' 'deploy' ; recipe 'customize_bash' 'deploy' ; recipe 'add_sudoer' 'deploy'
+
+### Run recipes
+# recipe 'secure_ssh'
+# recipe 'rbenv'
+# recipe 'ruby' '1.9.3-p125'
+# recipe 'nginx'
+# recipe 'memcached' '1.4.13'
+# recipe 'mariadb'
+
+### Show the Finished banner
+finished
+

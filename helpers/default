@@ -1,0 +1,360 @@
+#!/bin/bash
+
+##############################################################################
+# DO NOT MODIFY THIS FILE. Instead, modify 'helpers/custom'.
+##############################################################################
+
+COOKBOOK_NAME="$(basename $0)"
+DIR="$( cd "$( dirname "$0" )" && pwd )"
+
+#
+# Run a given recipe.
+#
+# Arguments can be passed to the 'recipe' function. They will be accessible by
+# the recipe as $2, $3, $4, etc.
+#
+recipe () {
+  CURRENT_RECIPE_NAME=$1
+  DEFAULT_ASSETS_PATH="$DIR/assets/default/$CURRENT_RECIPE_NAME"
+  COOKBOOK_ASSETS_PATH="$DIR/assets/$COOKBOOK_NAME/$CURRENT_RECIPE_NAME"
+  local custom_recipe="$DIR/recipes/custom/$CURRENT_RECIPE_NAME"
+  local default_recipe="$DIR/recipes/default/$CURRENT_RECIPE_NAME"
+
+  if [ -f $custom_recipe ]; then
+    log "Running recipe '$custom_recipe'..." 1
+    separator
+    . $custom_recipe
+
+  elif [ -f $default_recipe ]; then
+    log "Running recipe '$default_recipe'..." 1
+    separator
+    . $default_recipe
+  else
+    error "Could not find recipe for '$CURRENT_RECIPE_NAME'. Fail!"
+  fi
+
+  cd $DIR
+}
+
+#
+# Prints the 'finished' banner.
+#
+finished () {
+  spacer 1
+  separator "="
+  echo " FINISHED: '$COOKBOOK_NAME'"
+  separator "="
+  spacer 1
+}
+
+#
+# Writes a log line to the screen
+#
+# If specified, the first parameter is the number of empty lines to print
+# before the log message.
+#
+# If specified, the second parameter is the number of empty lines to print
+# before the log message.
+#
+log () {
+  if [[ $2 -gt 0 ]]; then
+    spacer $2
+  fi
+
+  echo " * $1"
+
+  if [[ $3 -gt 0 ]]; then
+    spacer $3
+  fi
+}
+
+#
+# Writes an error log line to the screen and exit with an error code.
+#
+error () {
+  spacer 2
+  echo " -> $1"
+  spacer 2
+  exit 1
+}
+
+#
+# Write one or many empty lines to the screen.
+#
+spacer () {
+  if [ $1 ]; then
+    local spaces=$1
+  else
+    local spaces=1
+  fi
+
+  for (( i=0; i<$spaces; i++ )) do
+    echo ""
+  done
+}
+
+#
+# noop
+#
+noop () {
+  return 0
+}
+
+#
+# Write a separator to the screen.
+#
+# You can optionally specify the separator character. Default is '-'.
+#
+separator () {
+  if [ $1 ]; then
+    local char=$1
+  else
+    local char='-'
+  fi
+
+  local width=$(tput cols)
+
+  for (( i=0; i < $width-2; i++ )) do
+    local output="$output$char"
+  done
+  echo $output
+}
+
+#
+# Update packages in package manager.
+#
+package_update () {
+  log "Updating package manager..." 0 1
+  detect_package_manager
+
+  if [ "$PACKAGE_MANAGER" == 'apt-get' ]; then
+    apt-get update -y
+  elif [ "$PACKAGE_MANAGER" == 'yum' ]; then
+    yum check-update -y
+  elif [ "$PACKAGE_MANAGER" == 'brew' ]; then
+    brew update
+  else
+    error "Unknown package manager: $PACKAGE_MANAGER"
+  fi
+
+  if [ $? -ne 0 ]; then
+    error "An error occured while updating packages. Fail!"
+  else
+    spacer 2
+  fi
+}
+
+#
+# Install a package through package manager
+#
+package () {
+  log "Installing package '$1'..."
+  detect_package_manager
+
+  test_package_installed $1 > /dev/null 2>&1
+
+  if [ $? -eq 0 ]; then
+    log "Package '$1' is already installed. Skipping."
+    return 0
+  fi
+
+  if [ "$PACKAGE_MANAGER" == 'apt-get' ]; then
+    DEBIAN_FRONTEND=noninteractive apt-get install -y $1
+  elif [ "$PACKAGE_MANAGER" == 'yum' ]; then
+    yum install -y $1
+  elif [ "$PACKAGE_MANAGER" == 'brew' ]; then
+    brew install $1
+  else
+    error "Unknown package manager: $PACKAGE_MANAGER"
+  fi
+
+  if [ $? -ne 0 ]; then
+    error "An error occured while installing package '$1'. Fail!"
+  else
+    spacer 2
+  fi
+}
+
+#
+# Determine if a package is installed or not.
+#
+# If package is installed, function will return 0. If not, it will return 1.
+#
+test_package_installed () {
+  detect_package_manager
+
+  # When many packages are specified, skip test.
+  if [ $# -gt 1 ]; then
+    return 1
+  fi
+
+  if [ "$PACKAGE_MANAGER" == 'apt-get' ]; then
+    dpkg -l $1
+    return $?
+  fi
+
+  # Don't know how to detect if a package is installed with other package managers.
+  return 1
+}
+
+#
+# Determine which package manager is in use on the system.
+#
+detect_package_manager () {
+  if [ "$PACKAGE_MANAGER" != "" ]; then
+    return 0
+  fi
+
+  if command_exist apt-get; then
+    PACKAGE_MANAGER='apt-get'
+  elif command_exist yum; then
+    PACKAGE_MANAGER='yum'
+  elif command_exist brew; then
+    PACKAGE_MANAGER='brew'
+  else
+    error "Could not find a package manager. Fail!"
+  fi
+
+  log "Detected package manager: $PACKAGE_MANAGER"
+  return 0
+}
+
+#
+# Determines if a command exist on the system.
+#
+command_exist () {
+  command -v "$1" > /dev/null 2>&1;
+}
+
+#
+# Copy a file from the assets folder to the specified location.
+#
+copy () {
+  local cookbook_assets_source="$COOKBOOK_ASSETS_PATH/$1"
+  local default_assets_source="$DEFAULT_ASSETS_PATH/$1"
+  local target=$2
+
+  if [ -f $cookbook_assets_source ]; then
+    log "Copying $cookbook_assets_source to $target..."
+    cp $cookbook_assets_source $target
+  elif [ -f $default_assets_source ]; then
+    log "Copying $default_assets_source to $target..."
+    cp $default_assets_source $target
+  else
+    error "Could not find '$1' to copy. Fail!"
+  fi
+}
+
+#
+# Add a user to the system.
+#
+add_user () {
+  local user=$1
+  local pass=$2
+  local args=$3
+
+  id $user  > /dev/null 2>&1
+
+  if [ $? -eq 0 ]; then
+    log "User $user already exists. Skipped creation."
+  else
+    log "Adding user $user..."
+    [ "$pass" == "" ] && pass=generate_password
+
+    if [[ "$args" != *nohome* ]]; then
+      /usr/sbin/useradd --password `openssl passwd -crypt $pass` --create-home $user
+    else
+      /usr/sbin/useradd --password `openssl passwd -crypt $pass` $user
+    fi
+  fi
+}
+
+#
+# Generate a random password.
+#
+generate_password() {
+  local l=$1
+  [ "$l" == "" ] && l=8
+  tr -dc A-Za-z0-9_ < /dev/urandom | head -c ${l} | xargs
+}
+
+#
+# Run a command as another user
+#
+run_as () {
+  local user=$1
+  local cmd=$2
+  log "Running command as '$user'..."
+  log "$cmd"
+  # sudo -u $user -H -s /bin/bash -c "$cmd"
+  # sudo -u $user -s /bin/bash -i "$cmd"
+  su -c "$cmd" -s /bin/bash $user
+}
+
+#
+# Add line to a file if line is not already present
+#
+add_line () {
+  local line=$1
+  local file=$2
+  grep "$line" $file > /dev/null 2>&1
+
+  if [ $? -ne 0 ]; then
+    log "Adding '$line' to '$file'..."
+    echo "$line" >> $file
+  else
+    log "'$line' already in '$file'. Skipping."
+  fi
+}
+
+#
+# Write a warning if user is not root.
+#
+warn_if_not_root () {
+  uid=`id -u` && [ "$uid" = "0" ] ||
+  { echo "WARNING: You are NOT running this script as 'root'. You might want to consider that..."; }
+}
+
+#
+# Stops the execution of the script if user is not root.
+#
+fail_if_not_root () {
+  uid=`id -u` && [ "$uid" = "0" ] ||
+  { echo "You must run this as 'root'. Exiting."; exit 1; }
+}
+
+#
+# Checks if a certain element has already been installed.
+#
+function is_installed () {
+  if [ $# -gt 1 ]; then
+    local args=$*
+    local name=${args// /-}
+  else
+    local name=$1
+  fi
+
+  if [[ -f ~/.shoestrap/installed/$name ]]; then
+    log "'$name' is already installed."
+    return 0
+  else
+    log "'$name' is not installed."
+    return 1
+  fi
+}
+
+#
+# Sets an element as installed.
+#
+function set_installed () {
+  if [ $# -gt 1 ]; then
+    local args=$*
+    local name=${args// /-}
+  else
+    local name=$1
+  fi
+
+  mkdir -p ~/.shoestrap/installed
+  touch ~/.shoestrap/installed/$name
+}
+

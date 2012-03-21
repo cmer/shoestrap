@@ -1,0 +1,14 @@
+#!/bin/bash
+
+##############################################################################
+# DO NOT MODIFY THIS FILE. Instead, modify 'helpers/custom'.
+##############################################################################
+
+. helpers/default
+. helpers/custom
+
+warn_if_not_root
+
+spacer 1; separator "="
+echo " BOOTSTRAPPING '$COOKBOOK_NAME'..."
+separator "="; spacer 1
