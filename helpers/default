@@ -5,7 +5,11 @@
 ##############################################################################
 
 COOKBOOK_NAME="$(basename $0)"
-DIR="$( cd "$( dirname "$0" )" && pwd )"
+if [ -z "SHOESTRAP_BASE" ]; then
+    DIR="$( cd "$( dirname "$0" )" && pwd )"
+else
+    DIR="$SHOESTRAP_BASE"
+fi
 
 #
 # Run a given recipe.
