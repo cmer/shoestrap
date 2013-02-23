@@ -163,7 +163,7 @@ package () {
   fi
 
   if [ "$PACKAGE_MANAGER" == 'apt-get' ]; then
-    DEBIAN_FRONTEND=noninteractive apt-get install -y $1
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes $1
   elif [ "$PACKAGE_MANAGER" == 'yum' ]; then
     yum install -y $1
   elif [ "$PACKAGE_MANAGER" == 'brew' ]; then
@@ -193,7 +193,7 @@ test_package_installed () {
   fi
 
   if [ "$PACKAGE_MANAGER" == 'apt-get' ]; then
-    dpkg -l $1
+    dpkg-query -l "$1" | grep -q ^.i
     return $?
   fi
 
