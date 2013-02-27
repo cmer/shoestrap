@@ -5,7 +5,7 @@
 ##############################################################################
 
 COOKBOOK_NAME="$(basename $0)"
-if [ -z "SHOESTRAP_BASE" ]; then
+if [ -z "$SHOESTRAP_BASE" ]; then
     DIR="$( cd "$( dirname "$0" )" && pwd )"
 else
     DIR="$SHOESTRAP_BASE"
