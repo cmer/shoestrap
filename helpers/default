@@ -331,12 +331,8 @@ fail_if_not_root () {
 # Checks if a certain element has already been installed.
 #
 function is_installed () {
-  if [ $# -gt 1 ]; then
-    local args=$*
-    local name=${args// /-}
-  else
-    local name=$1
-  fi
+  local args=$*
+  local name=${args//[ \/:@]/-}
 
   if [[ -f ~/.shoestrap/installed/$name ]]; then
     log "'$name' is already installed."
@@ -351,14 +347,9 @@ function is_installed () {
 # Sets an element as installed.
 #
 function set_installed () {
-  if [ $# -gt 1 ]; then
-    local args=$*
-    local name=${args// /-}
-  else
-    local name=$1
-  fi
+  local args=$*
+  local name=${args//[ \/:@]/-}
 
   mkdir -p ~/.shoestrap/installed
   touch ~/.shoestrap/installed/$name
 }
-
