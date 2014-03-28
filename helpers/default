@@ -135,6 +135,8 @@ package_update () {
     apt-get update -y
   elif [ "$PACKAGE_MANAGER" == 'yum' ]; then
     yum check-update -y
+  elif [ "$PACKAGE_MANAGER" == 'port' ]; then
+    port selfupdate
   elif [ "$PACKAGE_MANAGER" == 'brew' ]; then
     brew update
   else
@@ -166,6 +168,8 @@ package () {
     DEBIAN_FRONTEND=noninteractive apt-get install -y --force-yes $1
   elif [ "$PACKAGE_MANAGER" == 'yum' ]; then
     yum install -y $1
+  elif [ "$PACKAGE_MANAGER" == 'port' ]; then
+    port install $1
   elif [ "$PACKAGE_MANAGER" == 'brew' ]; then
     brew install $1
   else
@@ -213,6 +217,8 @@ detect_package_manager () {
     PACKAGE_MANAGER='apt-get'
   elif command_exist yum; then
     PACKAGE_MANAGER='yum'
+  elif command_exist port; then
+    PACKAGE_MANAGER='port'
   elif command_exist brew; then
     PACKAGE_MANAGER='brew'
   else
