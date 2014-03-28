@@ -136,7 +136,7 @@ package_update () {
   elif [ "$PACKAGE_MANAGER" == 'yum' ]; then
     yum check-update -y
   elif [ "$PACKAGE_MANAGER" == 'port' ]; then
-    port self-update
+    port selfupdate
   elif [ "$PACKAGE_MANAGER" == 'brew' ]; then
     brew update
   else
