@@ -21,10 +21,16 @@ recipe () {
   CURRENT_RECIPE_NAME=$1
   DEFAULT_ASSETS_PATH="$DIR/assets/default/$CURRENT_RECIPE_NAME"
   COOKBOOK_ASSETS_PATH="$DIR/assets/$COOKBOOK_NAME/$CURRENT_RECIPE_NAME"
+  local cookbook_recipe="$DIR/recipes/$COOKBOOK_NAME/$CURRENT_RECIPE_NAME"
   local custom_recipe="$DIR/recipes/custom/$CURRENT_RECIPE_NAME"
   local default_recipe="$DIR/recipes/default/$CURRENT_RECIPE_NAME"
 
-  if [ -f $custom_recipe ]; then
+  if [ -f $cookbook_recipe ]; then
+    log "Running recipe '$cookbook_recipe'..." 1
+    separator
+    . $cookbook_recipe
+
+  elif [ -f $custom_recipe ]; then
     log "Running recipe '$custom_recipe'..." 1
     separator
     . $custom_recipe
